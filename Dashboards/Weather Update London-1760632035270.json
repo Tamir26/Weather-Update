@@ -324,8 +324,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 7,
+        "w": 24,
         "x": 0,
         "y": 8
       },
@@ -375,7 +375,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": "5s",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -391,6 +391,6 @@
   "timezone": "",
   "title": "Weather Update London",
   "uid": "uXedBQ6Hz",
-  "version": 3,
+  "version": 6,
   "weekStart": ""
 }
