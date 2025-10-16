@@ -14,7 +14,7 @@ def test_send_to_rabbitmq(monkeypatch):
         def close(self):
             called['closed'] = True
 
-    monkeypatch.setattr("rabbitmq_client.pika.BlockingConnection", lambda params: MockConnection())
+    monkeypatch.setattr("app.rabbitmq_client.pika.BlockingConnection", lambda params: MockConnection())
 
     send_to_rabbitmq({"temp": 10}, queue_name="test_queue")
     assert called['queue'] == "test_queue"

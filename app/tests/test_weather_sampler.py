@@ -7,7 +7,7 @@ def test_get_coordinates(monkeypatch):
         def json(self):
             return [{'lat': 51.5074, 'lon': -0.1278}]
     
-    monkeypatch.setattr("weather_sampler.requests.get", lambda url: MockResponse())
+    monkeypatch.setattr("app.weather_sampler.requests.get", lambda url: MockResponse())
     
     coords = get_coordinates()
     assert coords == [51.5074, -0.1278]
@@ -22,7 +22,7 @@ def test_get_current_weather(monkeypatch):
                 "name": "London"
             }
 
-    monkeypatch.setattr("weather_sampler.requests.get", lambda url: MockResponse())
+    monkeypatch.setattr("app.weather_sampler.requests.get", lambda url: MockResponse())
     
     data, timestamp = get_current_weather(51.5074, -0.1278)
     assert data["main"]["temp"] == 15.5
