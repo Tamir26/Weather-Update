@@ -1,0 +1,1 @@
+0 * * * * root python /app/weather_sampler.py >> /var/log/cron.log 2>&1

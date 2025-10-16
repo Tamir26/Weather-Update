@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.16
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - cluster.name=docker-cluster
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - node.name=es01
+      - network.host=0.0.0.0
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - elk
+    restart: unless-stopped
+  weather_cron:
+    build:
+      context: .
+      dockerfile: ./cron_app/Dockerfile
+    container_name: weather_cron
+    depends_on:
+      - rabbitmq
+    networks:
+      - elk
+    restart: unless-stopped
+  weather_app:
+    build: 
+      context: ./app 
+      dockerfile: ../docker/Dockerfile  
+    container_name: weather_sampler
+    depends_on:
+      - rabbitmq         
+    networks:
+      - elk
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.16
+    container_name: logstash
+    depends_on:
+      - rabbitmq
+      - elasticsearch
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
+    ports:
+      - "5000:5000"
+    networks:
+      - elk
+    restart: unless-stopped
+    env_file:
+    - .env
+
+  grafana:
+    image: grafana/grafana:9.4.7
+    container_name: grafana
+    depends_on:
+      - elasticsearch
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - elk
+    restart: unless-stopped
+
+volumes:
+  esdata:
+  rabbitmqdata:
+  grafana-storage:
+
+networks:
+  elk:
+    driver: bridge
