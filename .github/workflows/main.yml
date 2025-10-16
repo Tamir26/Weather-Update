@@ -29,15 +29,16 @@ jobs:
           echo "CHOSEN_CITY=${{ vars.CHOSEN_CITY_NAME }}" >> .env
           echo "RABBITMQ_QUEUE=${{ vars.RABBITMQ_QUEUE }}" >> .env
 
-      - name: Verify .env file
-        run: cat .env
+      - name: Verify .env exists
+        run: |
+          ls -la
+          cat .env
 
       - name: Upload .env as artifact
         uses: actions/upload-artifact@v4
         with:
           name: env-file
           path: .env
-
   # ----------------------------
   # Unit tests
   # ----------------------------
