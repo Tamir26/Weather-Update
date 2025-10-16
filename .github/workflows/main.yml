@@ -14,9 +14,10 @@ jobs:
   # ----------------------------
   load-env:
     runs-on: ubuntu-latest
-    outputs:
-      env-artifact: env-artifact
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Create .env file
         run: |
           echo "GRAFANA_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}" >> .env
@@ -24,15 +25,17 @@ jobs:
           echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
           echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASS }}" >> .env
           echo "API_KEY_OPENWEATHER=${{ secrets.WEATHER_UPDATE_KEY }}" >> .env
-          echo "CHOSEN_CITY=${{vars.CHOSEN_CITY_NAME}}" >> .env
-          echo "RABBITMQ_QUEUE=${{vars.RABBITMQ_QUEUE}}" >> .env
+          echo "CHOSEN_CITY=${{ vars.CHOSEN_CITY_NAME }}" >> .env
+          echo "RABBITMQ_QUEUE=${{ vars.RABBITMQ_QUEUE }}" >> .env
+
+      - name: Verify .env file
+        run: cat .env
 
       - name: Upload .env as artifact
         uses: actions/upload-artifact@v4
         with:
           name: env-file
           path: .env
-
 
   # ----------------------------
   # Unit tests
