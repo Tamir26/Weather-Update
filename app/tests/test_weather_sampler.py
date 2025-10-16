@@ -1,5 +1,5 @@
 import pytest
-from weather_sampler import get_coordinates, get_current_weather
+from app.weather_sampler import get_coordinates, get_current_weather
 
 def test_get_coordinates(monkeypatch):
     class MockResponse:
