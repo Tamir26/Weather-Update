@@ -8,56 +8,27 @@ on:
 permissions:
   contents: write
 
+env:
+  # Secrets
+  WEATHER_UPDATE_KEY: ${{ secrets.WEATHER_UPDATE_KEY }}
+  RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+  RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+  GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
+  GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
+
+  # Repository variables
+  CHOSEN_CITY: ${{ vars.CHOSEN_CITY_NAME }}
+  RABBITMQ_QUEUE: ${{ vars.RABBITMQ_QUEUE }}
+
 jobs:
-  # ----------------------------
-  # Load env and upload as artifact
-  # ----------------------------
-  load-env:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Create .env file
-        run: |
-          cd ${{ github.workspace }}
-          touch .env
-          echo "GRAFANA_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}" >> .env
-          echo "GRAFANA_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}" >> .env
-          echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> .env
-          echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASS }}" >> .env
-          echo "API_KEY_OPENWEATHER=${{ secrets.WEATHER_UPDATE_KEY }}" >> .env
-          echo "CHOSEN_CITY=${{ vars.CHOSEN_CITY_NAME }}" >> .env
-          echo "RABBITMQ_QUEUE=${{ vars.RABBITMQ_QUEUE }}" >> .env
-
-      - name: Debug path
-        run: |
-          echo "Current dir:"
-          pwd
-          echo "Files:"
-          ls -la
-
-      - name: Upload .env as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: env-file
-          path: ${{ github.workspace }}/.env
-
   # ----------------------------
   # Unit tests
   # ----------------------------
   test:
     runs-on: ubuntu-latest
-    needs: load-env
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Download .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-file
-          path: ${{ github.workspace }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -86,32 +57,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-file
-          path: ${{ github.workspace }}
-
       - name: Determine version bump type
         id: bump_type
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "Last commit message: $COMMIT_MSG"
-
           bump="patch"
           if echo "$COMMIT_MSG" | grep -q "BREAKING CHANGE"; then bump="major"; fi
           if echo "$COMMIT_MSG" | grep -Eiq '^feat(\(|:)?'; then bump="minor"; fi
           if echo "$COMMIT_MSG" | grep -Eiq '^fix(\(|:)?'; then bump="patch"; fi
-
           echo "bump=$bump" >> $GITHUB_OUTPUT
 
       - name: Update VERSION file
         id: bump
         run: |
           CURRENT=$(cat VERSION.txt)
-          echo "Current version: $CURRENT"
           bump=${{ steps.bump_type.outputs.bump }}
-
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
           case "$bump" in
           major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0;;
@@ -121,7 +81,6 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "$NEW_VERSION" > VERSION.txt
           echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add VERSION.txt
@@ -143,12 +102,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Download .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-file
-          path: ${{ github.workspace }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -164,12 +117,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Download .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-file
-          path: ${{ github.workspace }}
 
       - name: Deploy stack with Docker Compose
         run: docker compose up -d
