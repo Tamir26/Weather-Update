@@ -1,5 +1,5 @@
 import pytest
-from rabbitmq_client import send_to_rabbitmq
+from app.rabbitmq_client import send_to_rabbitmq
 
 def test_send_to_rabbitmq(monkeypatch):
     called = {}
